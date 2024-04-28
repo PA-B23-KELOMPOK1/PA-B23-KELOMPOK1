@@ -1,5 +1,6 @@
 import mysql.connector
 from getpass import getpass
+from prettytable import PrettyTable
 
 db = mysql.connector.connect(
     host="localhost",
@@ -193,7 +194,6 @@ def tambah_data_produk():
     db.commit()
     print("Data produk berhasil ditambahkan.")
 
-
 def lihat_data_produk():
     while True:
         print("\nPilihan Urutan Data Produk:")
@@ -330,14 +330,13 @@ def sign_in():
     result = cursor.fetchone()
     if result:
         print("Login berhasil sebagai user.")
-        return True
+        return result  # Mengembalikan informasi user
     else:
         print("Login gagal. Periksa kembali username dan password.")
-        return False
+        return None
     
-keranjang = [] 
 
-import mysql.connector
+keranjang = [] 
 
 def get_product_name(id_produk):
     try:
@@ -350,7 +349,7 @@ def get_product_name(id_produk):
 
         cursor = db_connection.cursor()
 
-        query = "SELECT nama_produk FROM produk WHERE id = %s"
+        query = "SELECT nama_produk FROM produk WHERE id_produk = %s"
         cursor.execute(query, (id_produk,))
         result = cursor.fetchone()
 
@@ -368,29 +367,60 @@ def get_product_name(id_produk):
             cursor.close()
             db_connection.close()
 
-id_produk = 1 
-nama_produk = get_product_name(id_produk)
-print("Nama Produk:", nama_produk)
+def cari_produk(nama_produk):
+    try:
+        db_connection = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                password="",
+                database="kelompok1"
+        )
 
+        cursor = db_connection.cursor()
+
+        query = "SELECT * FROM produk WHERE nama_produk LIKE %s"
+        cursor.execute(query, ('%' + nama_produk + '%',))
+        results = cursor.fetchall()
+
+        if results:
+            return results
+        else:
+            return "Produk tidak ditemukan"
+
+    except mysql.connector.Error as error:
+        print("Error:", error)
+        return None
+
+    finally:
+        if db_connection.is_connected():
+            cursor.close()
+            db_connection.close()
 
 def beli_produk():
     id_produk = int(input("Masukkan ID produk yang ingin dibeli: "))
     jumlah = int(input("Masukkan jumlah yang ingin dibeli: "))
-    keranjang.append((id_produk, jumlah))
-    print("Produk berhasil ditambahkan ke keranjang.")
+
+    query = "SELECT id_produk FROM produk WHERE id_produk = %s"
+    cursor.execute(query, (id_produk,))
+    result = cursor.fetchone()
+
+    if result:
+        keranjang.append((id_produk, jumlah))
+        print("Produk berhasil ditambahkan ke keranjang.")
+    else:
+        print("Produk tidak ditemukan.")
 
 def lihat_keranjang():
     if keranjang:
         print("Isi Keranjang:")
-        for nama_produk, jumlah in keranjang:
-            print("Nama Produk:", get_product_name(nama_produk))
+        for id_produk, jumlah in keranjang:
+            print("Nama Produk:", get_product_name(id_produk))
             print("Jumlah:", jumlah)
             print("------------------------")
     else:
         print("Keranjang kosong.")
 
-
-def checkout():
+def checkout(user_info):
     if not keranjang:
         print("Keranjang kosong. Tidak dapat checkout.")
         return
@@ -412,38 +442,65 @@ def checkout():
         print("Pilihan tidak valid.")
         return
 
+    print("Informasi Pembeli:")
+    print("Nama:", user_info[1])
+    print("No. Telepon:", user_info[2])
+    print("Alamat:", user_info[4]) 
+
     for id_produk, jumlah_transaksi in keranjang:
-        query = "INSERT INTO transaksi (id_produk, jumlah, metode_pembayaran) VALUES (%s, %s, %s)"
-        cursor.execute(query, (id_produk, jumlah_transaksi, metode_pembayaran))
+        query = "INSERT INTO transaksi (id_produk, jumlah, metode_pembayaran, id_user) VALUES (%s, %s, %s, %s)"
+        cursor.execute(query, (id_produk, jumlah_transaksi, metode_pembayaran, user_info[0]))
+        update_stok_query = "UPDATE produk SET stok = stok - %s WHERE id_produk = %s"
+        cursor.execute(update_stok_query, (jumlah_transaksi, id_produk))
         db.commit()
 
     print("Pembayaran berhasil dengan", metode_pembayaran)
     keranjang.clear()
     print("Keranjang berhasil dibersihkan.")
 
-
 def menu_user():
     while True:
         print("\nPilihan Menu User:")
         print("1. Lihat Data Produk Tersedia")
-        print("2. Beli Produk")
-        print("3. Lihat Isi Keranjang")
-        print("4. Checkout")
-        print("5. Logout")
+        print("2. Cari Produk")
+        print("3. Beli Produk")
+        print("4. Lihat Isi Keranjang")
+        print("5. Checkout")
+        print("6. Logout")
         pilihan = input("Pilih menu: ")
         if pilihan == '1':
             lihat_data_produk()
         elif pilihan == '2':
-            beli_produk()
+            cari_produk_menu()
         elif pilihan == '3':
-            lihat_keranjang()
+            beli_produk()
         elif pilihan == '4':
-            checkout()
+            lihat_keranjang()
         elif pilihan == '5':
+            user_info = sign_in()
+            if user_info:
+                checkout(user_info)
+        elif pilihan == '6':
             print("Logout berhasil. Sampai jumpa lagi.")
             break
         else:
             print("Pilihan tidak valid. Silakan pilih lagi.")
+
+def cari_produk_menu():
+    keyword = input("Masukkan nama produk yang ingin dicari: ")
+    query = "SELECT * FROM produk WHERE nama_produk LIKE %s"
+    cursor.execute(query, ('%' + keyword + '%',))
+    results = cursor.fetchall()
+    if results:
+        table = PrettyTable(["ID", "Nama Produk", "Harga", "Stok", "Jenis Produk", "Metode Produksi", "Sertifikasi"])
+        for row in results:
+            row_with_id = (row[0],) + row[1:]
+            table.add_row(row_with_id)
+        print("Hasil Pencarian:")
+        print(table)
+    else:
+        print("Produk tidak ditemukan.")
+
 
 def main():
     while True:
