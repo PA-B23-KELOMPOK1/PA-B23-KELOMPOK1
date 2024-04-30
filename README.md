@@ -19,6 +19,7 @@
 ## **Deskripsi Program**
 
 ## **Flowchart**
+![kelompok1 drawio (3)](https://github.com/PA-B23-KELOMPOK1/PA-B23-KELOMPOK1/assets/146010899/1dfc7786-6ac1-469a-92e9-a4efb22e6cff)
 
 ## **Struktur Project**
 
