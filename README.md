@@ -35,15 +35,9 @@ Secara keseluruhan, program ini menyediakan platform yang lengkap untuk mengelol
 
 Struktur project untuk program ini terdiri dari satu file Python dan file SQL untuk skema basis data yaitu:
 
-PACapsKelompok1.py: Ini adalah file utama yang berisi seluruh kode program yang diberikan. Semua logika aplikasi, termasuk koneksi database, definisi kelas, fungsi utilitas, dan antarmuka pengguna, terkandung dalam file ini.
+- PACapsKelompok1.py: Ini adalah file utama yang berisi seluruh kode program yang diberikan. Semua logika aplikasi, termasuk koneksi database, definisi kelas, fungsi utilitas, dan antarmuka pengguna, terkandung dalam file ini.
 
-kelompok1_orppp.sql: File ini berisi skema basis data MySQL yang digunakan oleh program. Ini termasuk struktur tabel untuk menyimpan informasi tentang produk, petani, admin, dan transaksi, bersama dengan kunci asing dan indeks yang diperlukan.
-
-
-
-
-
-
+- kelompok1_orppp.sql: File ini berisi skema basis data MySQL yang digunakan oleh program. Ini termasuk struktur tabel untuk menyimpan informasi tentang produk, petani, admin, dan transaksi, bersama dengan kunci asing dan indeks yang diperlukan.
 
 
 ## **Fitur**
