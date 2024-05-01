@@ -330,7 +330,7 @@ def sign_in():
     result = cursor.fetchone()
     if result:
         print("Login berhasil sebagai user.")
-        return result  # Mengembalikan informasi user
+        return result
     else:
         print("Login gagal. Periksa kembali username dan password.")
         return None
