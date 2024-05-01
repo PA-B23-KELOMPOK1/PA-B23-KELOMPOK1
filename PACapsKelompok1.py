@@ -8,7 +8,6 @@ db = mysql.connector.connect(
     password="",
     database="kelompok1"
 )
-
 cursor = db.cursor()
 cursor.execute("USE kelompok1")
 db.commit()
@@ -31,6 +30,21 @@ class LinkedList:
         while last_node.next:
             last_node = last_node.next
         last_node.next = new_node
+
+    def hapus_node(self, key):
+        current = self.head
+        if current and current.data == key:
+            self.head = current.next
+            current = None
+            return
+        prev = None
+        while current and current.data != key:
+            prev = current
+            current = current.next
+        if current is None:
+            return
+        prev.next = current.next
+        current = None
 
 def login_admin():
     nama_admin = input("Masukkan username: ")
@@ -215,13 +229,15 @@ def lihat_data_produk():
         query = f"SELECT * FROM produk ORDER BY id_produk {order_by}"
         cursor.execute(query)
         results = cursor.fetchall()
-        print("Data Produk Pertanian:")
-        for row in results:
-            print("ID:", row[0])
-            print("Nama Produk:", row[2])
-            print("Harga:", row[3])
-            print("Stok:", row[4])
-            print("------------------------")
+
+        if results:
+            table = PrettyTable(["ID", "Nama Produk", "Harga", "Stok"])
+            for row in results:
+                table.add_row([row[0], row[2], row[3], row[4]])
+            print("Data Produk Pertanian:")
+            print(table)
+        else:
+            print("Tidak ada data produk.")
 
 def ubah_data_produk():
     id_produk = int(input("Masukkan ID produk yang ingin diubah: "))
@@ -276,13 +292,15 @@ def lihat_data_petani():
         query = f"SELECT * FROM petani ORDER BY id_petani {order_by}"
         cursor.execute(query)
         results = cursor.fetchall()
-        print("Data Petani:")
-        for row in results:
-            print("ID:", row[0])
-            print("Nama Petani:", row[1])
-            print("Lokasi Pertanian:", row[2])
-            print("Metode Pertanian:", row[3])
-            print("------------------------")
+
+        if results:
+            table = PrettyTable(["ID", "Nama Petani", "Lokasi Pertanian", "Metode Pertanian"])
+            for row in results:
+                table.add_row([row[0], row[1], row[2], row[3]])
+            print("Data Petani:")
+            print(table)
+        else:
+            print("Tidak ada data petani.")
 
 def ubah_data_petani():
     id_petani = int(input("Masukkan ID petani yang ingin diubah: "))
@@ -330,7 +348,7 @@ def sign_in():
     result = cursor.fetchone()
     if result:
         print("Login berhasil sebagai user.")
-        return result
+        return result  # Mengembalikan informasi user
     else:
         print("Login gagal. Periksa kembali username dan password.")
         return None
@@ -413,10 +431,17 @@ def beli_produk():
 def lihat_keranjang():
     if keranjang:
         print("Isi Keranjang:")
+        table = PrettyTable(["Nama Produk", "Jumlah", "Harga", "Total Harga"])
+        total_harga = 0
         for id_produk, jumlah in keranjang:
-            print("Nama Produk:", get_product_name(id_produk))
-            print("Jumlah:", jumlah)
-            print("------------------------")
+            nama_produk = get_product_name(id_produk)
+            cursor.execute("SELECT harga FROM produk WHERE id_produk = %s", (id_produk,))
+            harga = cursor.fetchone()[0]
+            harga_total = float(harga) * jumlah  # Konversi harga_total menjadi float2
+            total_harga += harga_total
+            table.add_row([nama_produk, jumlah, harga, harga_total])
+        print(table)
+        print("Total Harga: Rp", total_harga)
     else:
         print("Keranjang kosong.")
 
@@ -430,33 +455,40 @@ def checkout(user_info):
     print("2. Transfer Bank")
     print("3. E-Wallet")
 
-    choice = input("Masukkan pilihan (1/2/3): ")
+    while True:
+        choice = input("Masukkan pilihan (1/2/3): ")
 
-    if choice == '1':
-        metode_pembayaran = 'Debit Card'
-    elif choice == '2':
-        metode_pembayaran = 'Transfer Bank'
-    elif choice == '3':
-        metode_pembayaran = 'E-Wallet'
-    else:
-        print("Pilihan tidak valid.")
-        return
+        if choice == '1':
+            metode_pembayaran = 'Debit Card'
+            break
+        elif choice == '2':
+            metode_pembayaran = 'Transfer Bank'
+            break
+        elif choice == '3':
+            metode_pembayaran = 'E-Wallet'
+            break
+        else:
+            print("Pilihan tidak valid.")
 
-    print("Informasi Pembeli:")
+    print("\nInformasi Pembeli:")
     print("Nama:", user_info[1])
     print("No. Telepon:", user_info[2])
-    print("Alamat:", user_info[4]) 
+    print("Alamat:", user_info[4])
 
+    total_harga = 0
+    print("\nDetail Pembelian:")
+    table = PrettyTable(["Nama Produk", "Jumlah", "Harga", "Total Harga"])
     for id_produk, jumlah_transaksi in keranjang:
-        query = "INSERT INTO transaksi (id_produk, jumlah, metode_pembayaran, id_user) VALUES (%s, %s, %s, %s)"
-        cursor.execute(query, (id_produk, jumlah_transaksi, metode_pembayaran, user_info[0]))
-        update_stok_query = "UPDATE produk SET stok = stok - %s WHERE id_produk = %s"
-        cursor.execute(update_stok_query, (jumlah_transaksi, id_produk))
-        db.commit()
-
-    print("Pembayaran berhasil dengan", metode_pembayaran)
-    keranjang.clear()
-    print("Keranjang berhasil dibersihkan.")
+        nama_produk = get_product_name(id_produk)
+        cursor.execute("SELECT harga FROM produk WHERE id_produk = %s", (id_produk,))
+        harga = cursor.fetchone()[0]
+        harga_total = float(harga) * jumlah_transaksi
+        total_harga += harga_total
+        table.add_row([nama_produk, jumlah_transaksi, harga, harga_total])
+    print(table)
+    print("Total Harga: Rp", total_harga)
+    print("\nPembelian selesai.")
+    main()
 
 def menu_user():
     while True:
@@ -486,20 +518,47 @@ def menu_user():
         else:
             print("Pilihan tidak valid. Silakan pilih lagi.")
 
+def cari_produk(nama_produk):
+    try:
+        db_connection = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="kelompok1"
+        )
+
+        cursor = db_connection.cursor()
+
+        query = "SELECT id_produk, nama_produk, harga, stok FROM produk WHERE nama_produk LIKE %s"
+        cursor.execute(query, ('%' + nama_produk + '%',))
+        results = cursor.fetchall()
+
+        if results:
+            return results
+        else:
+            return "Produk tidak ditemukan"
+
+    except mysql.connector.Error as error:
+        print("Error:", error)
+        return None
+
+    finally:
+        if db_connection.is_connected():
+            cursor.close()
+            db_connection.close()
+
 def cari_produk_menu():
     keyword = input("Masukkan nama produk yang ingin dicari: ")
-    query = "SELECT * FROM produk WHERE nama_produk LIKE %s"
-    cursor.execute(query, ('%' + keyword + '%',))
-    results = cursor.fetchall()
-    if results:
-        table = PrettyTable(["ID", "Nama Produk", "Harga", "Stok", "Jenis Produk", "Metode Produksi", "Sertifikasi"])
+    results = cari_produk(keyword)
+    if results != "Produk tidak ditemukan":
+        table = PrettyTable(["ID", "Nama Produk", "Harga", "Stok"])
         for row in results:
-            row_with_id = (row[0],) + row[1:]
-            table.add_row(row_with_id)
+            table.add_row(row)
         print("Hasil Pencarian:")
         print(table)
     else:
         print("Produk tidak ditemukan.")
+
 
 
 def main():
