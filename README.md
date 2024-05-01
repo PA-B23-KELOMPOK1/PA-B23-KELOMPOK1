@@ -107,8 +107,7 @@ Berikut adalah langkah-langkah cara penggunaan dari codingan yang kami buat:
    - Sesuaikan informasi koneksi database seperti host, username, dan password sesuai dengan konfigurasi MySQL Server di codingan.
 
 2. **Menjalankan Program**:
-   - Jalankan program Python dengan menjalankan file yang bernama sesuai dengan codingan yang diberikan.
-   - Misalnya, jika file disimpan dengan nama "farm_management_system.py", jalankan perintah `python farm_management_system.py` di terminal atau konsol.
+   - Jalankan program Python dengan menjalankan file yang sesuai dengan yang ada di github kami.
 
 3. **Login Sebagai Admin**:
    - Setelah program dijalankan, akan diminta untuk memilih jenis login: admin atau user biasa.
